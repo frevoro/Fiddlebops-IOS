@@ -1,0 +1,35 @@
+name: "Build iOS app"
+
+# on: [push]
+on: [workflow_dispatch]
+
+jobs:
+  build_ios:
+    runs-on: macos-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: build archive and ipaify
+        run: |
+          wget -O archive.zip "https://www.dropbox.com/scl/fi/pn04bojy27ls0uformwtm/6cb21de8-ab01-11f0-9d9f-005056c00008.zip?rlkey=wjljxqu62jmhrf172275f63n8&dl=1"
+          unzip archive.zip -d .
+
+          xcodebuild archive -project Fiddlebops-IOS.xcodeproj -scheme 'Fiddlebops-IOS' -archivePath Fiddlebops-IOS.xcarchive -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+          mkdir Payload
+          mv Fiddlebops-IOS.xcarchive/Products/Applications/Fiddlebops-IOS.app Payload/Fiddlebops-IOS.app
+
+          zip -r "Fiddlebops-IOS.ipa" "Payload"
+
+          mv Fiddlebops-IOS.ipa ${{ runner.temp }}/Fiddlebops-IOS.ipa
+
+
+      - name: Upload application
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fiddlebops-IOS
+          path: ${{ runner.temp }}/Fiddlebops-IOS.ipa
+          # you can also archive the entire directory
+          # path: ${{ runner.temp }}/build
+          retention-days: 3
